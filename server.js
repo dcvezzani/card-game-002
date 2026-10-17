@@ -8,7 +8,7 @@ const PORT = Number(process.env.PORT) || 3000;
 const SPRITE = path.join(
   __dirname,
   "dcv",
-  "Monochrome Numbered Card Grid.png",
+  "Monochrome Numbered Card Row.png",
 );
 
 const app = express();

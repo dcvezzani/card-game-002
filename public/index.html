@@ -12,24 +12,37 @@
     />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body class="page">
+  <body class="page page--fit">
     <a class="skip-link" href="#main">Skip to table</a>
     <header class="band">
       <a class="brand" href="/">Rec Room</a>
-      <nav class="row">
-        <a href="/style-guide.html">Style guide</a>
-      </nav>
+      <div class="row">
+        <div class="player-chip is-turn">
+          <span class="avatar" aria-hidden="true">Y</span>
+          You
+        </div>
+        <div class="player-chip is-ready">
+          <span class="avatar" aria-hidden="true">B</span>
+          Bo
+        </div>
+        <nav class="row">
+          <a href="/style-guide.html">Style guide</a>
+        </nav>
+      </div>
     </header>
     <main id="main" class="page-body">
-      <div
-        id="hand"
-        class="hand"
-        role="list"
-        aria-label="Hand of cards 1 through 13"
-      ></div>
+      <div class="arena" aria-label="Game table">
+        <div
+          id="hand"
+          class="hand"
+          role="list"
+          aria-label="Hand of cards 1 through 13"
+        ></div>
+      </div>
     </main>
     <footer class="band">
-      <span>Hover or focus a card to lift it</span>
+      <span id="turn-copy">Your turn — pick a card</span>
+      <button class="btn btn-secondary" id="play" type="button">Play</button>
     </footer>
     <script src="/app.js" type="module"></script>
   </body>
