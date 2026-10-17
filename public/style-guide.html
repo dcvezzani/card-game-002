@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rec Room — Style Guide</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="page">
+    <a class="skip-link" href="#main">Skip to gallery</a>
+    <header class="band">
+      <a class="brand" href="/">Rec Room</a>
+      <nav class="row">
+        <a href="/">Table</a>
+        <a href="/style-guide.html">Style guide</a>
+      </nav>
+    </header>
+    <main id="main" class="page-body">
+      <div class="guide">
+        <section class="arena arena--rect">
+          <div class="arena-inner">
+            <h1>Rec Room style guide</h1>
+            <p>
+              Playful sticker UI for playing games with friends. Specs live in
+              <code>docs/STYLE_GUIDE.md</code>.
+            </p>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Color</h2>
+          <div class="swatch-row">
+            <figure class="swatch">
+              <div class="chip" style="background: var(--color-arena)"></div>
+              <figcaption>Arena #3BADE8</figcaption>
+            </figure>
+            <figure class="swatch">
+              <div class="chip" style="background: var(--color-court)"></div>
+              <figcaption>Court #E85C48</figcaption>
+            </figure>
+            <figure class="swatch">
+              <div class="chip" style="background: var(--color-ball)"></div>
+              <figcaption>Ball #D4893A</figcaption>
+            </figure>
+            <figure class="swatch">
+              <div class="chip" style="background: var(--color-ink)"></div>
+              <figcaption>Ink #2B2A28</figcaption>
+            </figure>
+            <figure class="swatch">
+              <div class="chip" style="background: var(--color-net)"></div>
+              <figcaption>Net #F4F1E8</figcaption>
+            </figure>
+            <figure class="swatch">
+              <div class="chip" style="background: var(--color-felt)"></div>
+              <figcaption>Felt #1F6FA3</figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Type</h2>
+          <p class="display display-xl">Fredoka for titles and scores</p>
+          <p class="display display-lg">Lobby night · 28px</p>
+          <p>
+            Nunito for body copy, chat, and forms. Keep sentences short and
+            inviting so the table feels like friends, not a console.
+          </p>
+        </section>
+
+        <section class="panel">
+          <h2>Buttons</h2>
+          <div class="row">
+            <button class="btn btn-primary" type="button">Play</button>
+            <button class="btn btn-secondary" type="button">Spectate</button>
+            <button class="btn btn-ghost" type="button">Rules</button>
+            <button class="btn btn-icon btn-secondary" type="button" aria-label="More">
+              ···
+            </button>
+            <button class="btn btn-primary" type="button" disabled>Waiting</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Players</h2>
+          <div class="row">
+            <div class="player-chip is-turn">
+              <span class="avatar" aria-hidden="true">A</span>
+              Alex · your turn
+            </div>
+            <div class="player-chip is-ready">
+              <span class="avatar" aria-hidden="true">B</span>
+              Bo · ready
+            </div>
+            <div class="player-chip is-away">
+              <span class="avatar" aria-hidden="true">C</span>
+              Cam · away
+            </div>
+          </div>
+        </section>
+
+        <div class="grid-2">
+          <article class="room-card">
+            <header>
+              <h3>Kitchen table</h3>
+              <span class="seats">2 / 4</span>
+            </header>
+            <p class="muted">Casual · best of three</p>
+            <div class="players">
+              <div class="player-chip">
+                <span class="avatar" aria-hidden="true">A</span>
+                Alex
+              </div>
+              <div class="player-chip is-ready">
+                <span class="avatar" aria-hidden="true">B</span>
+                Bo
+              </div>
+            </div>
+            <button class="btn btn-primary" type="button">Join</button>
+          </article>
+          <section class="panel stack">
+            <h2>Chat &amp; scores</h2>
+            <div class="chat">
+              <div class="bubble">
+                <span class="who">Bo</span>
+                Ready when you are.
+              </div>
+              <div class="bubble is-self">
+                <span class="who">You</span>
+                Shuffle us in.
+              </div>
+            </div>
+            <div class="row">
+              <span class="badge">Ready</span>
+              <span class="badge badge-score">120</span>
+              <span class="badge badge-info">Info</span>
+            </div>
+            <div class="toast" role="status">Bo joined the table</div>
+          </section>
+        </div>
+
+        <section class="panel">
+          <h2>Form</h2>
+          <form>
+            <label class="field">
+              <span class="label">Display name</span>
+              <input class="input" type="text" name="name" autocomplete="nickname" />
+            </label>
+            <label class="field">
+              <span class="label">Table note</span>
+              <textarea class="textarea" name="note" rows="3"></textarea>
+            </label>
+            <button class="btn btn-primary" type="button">Save seat</button>
+          </form>
+        </section>
+      </div>
+    </main>
+    <footer class="band">
+      <span>Building blocks for lobby, table, and results pages</span>
+    </footer>
+  </body>
+</html>
