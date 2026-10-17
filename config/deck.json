@@ -1,0 +1,5 @@
+{
+  "numberColors": ["red", "gold", "green", "blue"],
+  "wildColor": "black",
+  "skipColor": "black"
+}

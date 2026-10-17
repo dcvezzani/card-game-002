@@ -11,7 +11,9 @@ const hand = await fetch("/api/hand").then((res) => {
 });
 
 /** Player-selected ranks. The sticker ring marks this set, not hover. */
-const selected = new Set([hand.selectedRank ?? 1]);
+const selected = new Set([String(hand.selectedRank ?? 1)]);
+
+const fanOrder = new Map(hand.cards.map((card, index) => [String(card.rank), index]));
 
 function spriteStyle(card, sheetUrl) {
   const { sprite, cardWidth, cardHeight } = card;
@@ -38,13 +40,13 @@ function applyVars(el, vars) {
 }
 
 function selectedList() {
-  return [...selected].sort((a, b) => a - b);
+  return [...selected].sort((a, b) => fanOrder.get(a) - fanOrder.get(b));
 }
 
 function syncSelection() {
   const ranks = selectedList();
   for (const card of handEl.querySelectorAll(".card")) {
-    const isSelected = selected.has(Number(card.dataset.rank));
+    const isSelected = selected.has(card.dataset.rank);
     card.classList.toggle("selected", isSelected);
     card.setAttribute("aria-pressed", String(isSelected));
   }
@@ -61,8 +63,9 @@ function syncSelection() {
 }
 
 function toggleSelect(rank) {
-  if (selected.has(rank)) selected.delete(rank);
-  else selected.add(rank);
+  const key = String(rank);
+  if (selected.has(key)) selected.delete(key);
+  else selected.add(key);
   syncSelection();
 }
 
