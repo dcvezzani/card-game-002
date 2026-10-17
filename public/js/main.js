@@ -8,6 +8,10 @@ const tableEl = document.querySelector("#table");
 const actionsEl = document.querySelector("#actions");
 const modalActionsEl = document.querySelector("#modal-actions");
 const phaseLineEl = document.querySelector("#phase-line");
+const botsEl = document.querySelector("#bots");
+const botsCountEl = document.querySelector("#bots-count");
+const botsLessEl = document.querySelector("#bots-less");
+const botsMoreEl = document.querySelector("#bots-more");
 const resultEl = document.querySelector("#round-result");
 const chatLogEl = document.querySelector("#chat-log");
 const chatForm = document.querySelector("#chat-form");
@@ -108,6 +112,11 @@ function canDeal() {
   return state.players.filter((entry) => !entry.left).length >= 2;
 }
 
+function canSetBots() {
+  const player = me();
+  return Boolean(player && state.dealerId === player.id && state.status !== "playing");
+}
+
 function placeHand() {
   const full = handDialog.open;
   const parent = full ? handStage : handDock;
@@ -122,6 +131,7 @@ function render() {
   renderHand();
   renderActions();
   renderPhase();
+  renderBots();
   renderResult();
   renderChat();
   statusEl.textContent = statusLine();
@@ -188,7 +198,10 @@ function renderTable() {
   });
 
   piles.append(drawBtn, discardBtn);
-  tableEl.append(piles);
+  const ring = document.createElement("div");
+  ring.className = "deck-ring";
+  ring.setAttribute("aria-hidden", "true");
+  tableEl.append(ring, piles);
 
   const people = circle(state.players, state.you?.id);
   people.forEach((player, index) => {
@@ -197,9 +210,7 @@ function renderTable() {
     if (player.isTurn) seat.classList.add("is-turn");
     if (player.left || !player.connected) seat.classList.add("is-away");
     const angle = Math.PI / 2 - (index / people.length) * Math.PI * 2;
-    seat.style.left = `${50 + Math.cos(angle) * 42}%`;
-    seat.style.top = `${50 + Math.sin(angle) * 40}%`;
-    if (Math.sin(angle) > 0.15) seat.classList.add("is-bottom");
+    seat.dataset.angle = String(angle);
 
     const avatarBtn = document.createElement("button");
     avatarBtn.type = "button";
@@ -218,6 +229,7 @@ function renderTable() {
     const meta = document.createElement("span");
     meta.className = "seat-meta";
     const bits = [`Phase ${player.phase}`, String(player.score)];
+    if (player.bot) bits.push("AI");
     if (player.isDealer) bits.push("dealer");
     if (player.waiting) bits.push("next round");
     if (player.left) bits.push("left");
@@ -249,7 +261,10 @@ function renderTable() {
       shown.append(hidden);
     }
 
-    seat.append(melds, avatarBtn, name, meta, shown);
+    const info = document.createElement("div");
+    info.className = "seat-info";
+    info.append(name, meta, shown);
+    seat.append(info, avatarBtn, melds);
     tableEl.append(seat);
   });
 
@@ -258,6 +273,284 @@ function renderTable() {
     note.className = "watchers";
     note.textContent = `Watching: ${state.spectators.map((entry) => entry.name).join(", ")}`;
     tableEl.append(note);
+  }
+  placeSeats();
+}
+
+const MELD_CARD_W = 34;
+const MELD_SHOW = 18;
+const MELD_SHOW_MIN = 10;
+const SEAT_GAP = 6;
+
+function boxesMeet(a, b) {
+  return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+}
+
+function boxCorners(box) {
+  return [
+    [box.left, box.top],
+    [box.right, box.top],
+    [box.left, box.bottom],
+    [box.right, box.bottom],
+  ];
+}
+
+function insideCircle(box, cx, cy, radius) {
+  const limit = radius * radius;
+  return boxCorners(box).every(([x, y]) => (x - cx) ** 2 + (y - cy) ** 2 <= limit);
+}
+
+function clearOfCircle(box, radius) {
+  const x = Math.max(box.left, Math.min(0, box.right));
+  const y = Math.max(box.top, Math.min(0, box.bottom));
+  return x * x + y * y >= radius * radius;
+}
+
+function localBox(x, y, width, height) {
+  return {
+    left: x - width / 2,
+    right: x + width / 2,
+    top: y - height / 2,
+    bottom: y + height / 2,
+  };
+}
+
+function gapBetween(a, b) {
+  const dx = Math.max(a.left - b.right, b.left - a.right, 0);
+  const dy = Math.max(a.top - b.bottom, b.top - a.bottom, 0);
+  return Math.hypot(dx, dy);
+}
+
+function padded(box, pad) {
+  return {
+    left: box.left - pad,
+    right: box.right + pad,
+    top: box.top - pad,
+    bottom: box.bottom + pad,
+  };
+}
+
+function valueStrip(box, strip) {
+  return {
+    left: box.left,
+    right: box.right,
+    top: box.top,
+    bottom: Math.min(box.bottom, box.top + strip),
+  };
+}
+
+export function placeSeats() {
+  const arena = tableEl.getBoundingClientRect();
+  const piles = tableEl.querySelector(".piles");
+  const ring = tableEl.querySelector(".deck-ring");
+  if (!arena.width || !piles || !ring) return;
+  const tableR = Math.min(arena.width, arena.height) / 2 - 6;
+  const pile = piles.getBoundingClientRect();
+  const deckR = Math.hypot(pile.width, pile.height) / 2 + 10;
+  ring.style.width = `${deckR * 2}px`;
+  ring.style.height = `${deckR * 2}px`;
+  const deckLimit = deckR + 4;
+  const avatarSize = 58;
+
+  const onTable = (box) => insideCircle(box, 0, 0, tableR) && clearOfCircle(box, deckLimit);
+  const clearOf = (box, blockers, pad = SEAT_GAP) =>
+    blockers.every((blocker) => !boxesMeet(box, padded(blocker, pad)));
+
+  const stackBoxes = (centerX, topY, sizes, step) =>
+    sizes.map((size, index) => {
+      const top = topY + index * step;
+      return {
+        left: centerX - size.width / 2,
+        right: centerX + size.width / 2,
+        top,
+        bottom: top + size.height,
+      };
+    });
+
+  const findStack = (avatar, ux, uy, sizes, step, occupied, allowBodyOverlap) => {
+    if (!sizes.length) return { boxes: [], score: 0 };
+    const ax = (avatar.left + avatar.right) / 2;
+    const ay = (avatar.top + avatar.bottom) / 2;
+    const stackH = sizes[0].height + (sizes.length - 1) * step;
+    const start = allowBodyOverlap ? -stackH + step : avatarSize / 2 + 2;
+    let best = null;
+    for (let along = start; along <= 210; along += 4) {
+      for (let cross = 0; cross <= 160; cross += 4) {
+        for (const dir of cross === 0 ? [0] : [1, -1]) {
+          const centerX = ax + ux * along - uy * cross * dir;
+          const topY = ay + uy * along + ux * cross * dir;
+          const boxes = stackBoxes(centerX, topY, sizes, step);
+          if (!boxes.every((box) => onTable(box) && clearOf(box, occupied))) continue;
+          if (boxes.some((box) => boxesMeet(valueStrip(box, step), padded(avatar, 2)))) continue;
+          if (!allowBodyOverlap && boxes.some((box) => boxesMeet(box, avatar))) continue;
+          const midY = topY + stackH / 2;
+          const outward = (centerX - ax) * ux + (midY - ay) * uy;
+          if (outward < 8) continue;
+          const gap = Math.min(...boxes.map((box) => gapBetween(box, avatar)));
+          const score = Math.abs(cross) * 0.5 + Math.abs(gap - SEAT_GAP) + (allowBodyOverlap ? 24 : 0);
+          if (!best || score < best.score) best = { boxes, score };
+        }
+      }
+      if (best && best.score < 20) return best;
+    }
+    return best;
+  };
+
+  const besideAvatar = (avatar, width, height, blockers) => {
+    const ax = (avatar.left + avatar.right) / 2;
+    const ay = (avatar.top + avatar.bottom) / 2;
+    const slots = [
+      [ax, avatar.top - SEAT_GAP - height / 2],
+      [ax, avatar.bottom + SEAT_GAP + height / 2],
+      [avatar.left - SEAT_GAP - width / 2, ay],
+      [avatar.right + SEAT_GAP + width / 2, ay],
+    ];
+    const fits = slots
+      .map(([x, y]) => localBox(x, y, width, height))
+      .filter((box) => onTable(box) && clearOf(box, blockers) && !boxesMeet(box, avatar));
+    fits.sort((a, b) => {
+      const ar = Math.hypot((a.left + a.right) / 2, (a.top + a.bottom) / 2);
+      const br = Math.hypot((b.left + b.right) / 2, (b.top + b.bottom) / 2);
+      return ar - br;
+    });
+    return fits[0] ?? null;
+  };
+
+  const underStack = (boxes, width, height, blockers, avatar) => {
+    const bottom = Math.max(...boxes.map((box) => box.bottom));
+    const centerX = (Math.min(...boxes.map((box) => box.left)) + Math.max(...boxes.map((box) => box.right))) / 2;
+    const box = {
+      left: centerX - width / 2,
+      right: centerX + width / 2,
+      top: bottom + 4,
+      bottom: bottom + 4 + height,
+    };
+    const clear = onTable(box) && clearOf(box, blockers) && !boxesMeet(box, avatar) && boxes.every((meld) => !boxesMeet(box, meld));
+    return clear ? box : null;
+  };
+
+  const corridor = (a, b) => {
+    const ax = (a.left + a.right) / 2;
+    const ay = (a.top + a.bottom) / 2;
+    const bx = (b.left + b.right) / 2;
+    const by = (b.top + b.bottom) / 2;
+    return {
+      left: Math.min(ax, bx) - 4,
+      right: Math.max(ax, bx) + 4,
+      top: Math.min(ay, by) - 4,
+      bottom: Math.max(ay, by) + 4,
+    };
+  };
+
+  const applyInfoSize = (infoEl, px) => {
+    const size = px ? `${px}px` : "";
+    infoEl.style.fontSize = size;
+    for (const node of infoEl.querySelectorAll(".seat-name, .seat-meta, .hidden-count")) {
+      node.style.fontSize = size;
+    }
+  };
+
+  const shift = (el, box, width, height) => {
+    const left = box.left + (box.right - box.left - width) / 2;
+    const top = box.top + (box.bottom - box.top - height) / 2;
+    el.style.transform = `translate(${left}px, ${top}px)`;
+  };
+
+  const occupied = [];
+  const seats = [...tableEl.querySelectorAll(".seat")].sort(
+    (a, b) => b.querySelectorAll(".meld").length - a.querySelectorAll(".meld").length,
+  );
+
+  for (const seat of seats) {
+    const angle = Number(seat.dataset.angle);
+    const ux = Math.cos(angle);
+    const uy = Math.sin(angle);
+    const info = seat.querySelector(".seat-info");
+    const avatarEl = seat.querySelector(".avatar-btn");
+    const meldEls = [...seat.querySelector(".seat-melds").querySelectorAll(".meld")];
+    info.hidden = false;
+    const labelSizes = [15, 13, 12, 11, 10].map((px) => {
+      applyInfoSize(info, px);
+      const rect = info.getBoundingClientRect();
+      return { px, width: rect.width, height: rect.height };
+    });
+    applyInfoSize(info, 0);
+    const infoSize = info.getBoundingClientRect();
+
+    let placed = null;
+    for (let show = meldEls.length ? MELD_SHOW : MELD_SHOW_MIN; show >= MELD_SHOW_MIN; show -= 2) {
+      seat.querySelector(".seat-melds").style.setProperty("--meld-step", `${show - MELD_CARD_W}px`);
+      const sizes = meldEls.map((meld) => {
+        const rect = meld.getBoundingClientRect();
+        return { width: rect.width, height: rect.height };
+      });
+      const labelUnder = (boxes, avatar) => {
+        if (!boxes?.length) return null;
+        for (const sized of labelSizes) {
+          const under = underStack(boxes, sized.width, sized.height, occupied, avatar);
+          if (under) return { infoBox: under, infoSize: sized };
+        }
+        return null;
+      };
+      let candidate = null;
+      let stop = false;
+      for (let ta = deckLimit + 16; ta < tableR - 8 && !stop; ta += 6) {
+        for (let cross = 0; cross <= 72 && !stop; cross += 12) {
+          for (const dir of cross === 0 ? [0] : [1, -1]) {
+            const ax = ux * ta - uy * cross * dir;
+            const ay = uy * ta + ux * cross * dir;
+            const avatar = localBox(ax, ay, avatarSize, avatarSize);
+            if (!onTable(avatar) || !clearOf(avatar, occupied)) continue;
+            const separated = findStack(avatar, ux, uy, sizes, show, occupied, false);
+            const nested = sizes.length ? findStack(avatar, ux, uy, sizes, show, occupied, true) : null;
+            let boxes = separated?.boxes ?? nested?.boxes ?? [];
+            let stackScore = separated?.score ?? nested?.score ?? 0;
+            if (sizes.length && !boxes.length) continue;
+            let label = sizes.length ? labelUnder(separated?.boxes, avatar) : null;
+            if (sizes.length && !label && nested) {
+              const nestedLabel = labelUnder(nested.boxes, avatar);
+              if (nestedLabel || !separated) {
+                boxes = nested.boxes;
+                stackScore = nested.score;
+                label = nestedLabel;
+              }
+            }
+            const infoBox = sizes.length ? label?.infoBox ?? null : besideAvatar(avatar, infoSize.width, infoSize.height, occupied);
+            const sized = label?.infoSize ?? infoSize;
+            const score = stackScore + ta * 0.02 + (infoBox ? 0 : 400);
+            if (!candidate || score < candidate.score) {
+              candidate = { avatar, boxes, infoSize: sized, infoBox, score };
+            }
+            if (infoBox && stackScore < 20) stop = true;
+          }
+        }
+      }
+      if (candidate?.infoBox) {
+        placed = candidate;
+        break;
+      }
+      if (candidate && !placed) placed = candidate;
+      if (!meldEls.length) break;
+    }
+    if (!placed) continue;
+
+    const infoBox = placed.infoBox;
+    applyInfoSize(info, infoBox && placed.boxes.length ? placed.infoSize.px : 0);
+    info.hidden = !infoBox;
+    if (infoBox) shift(info, infoBox, placed.infoSize.width, placed.infoSize.height);
+    shift(avatarEl, placed.avatar, 52, 52);
+    placed.boxes.forEach((box, index) => {
+      meldEls[index].style.zIndex = String(index + 1);
+      shift(meldEls[index], box, box.right - box.left, box.bottom - box.top);
+    });
+    const cluster = [placed.avatar, ...placed.boxes];
+    if (infoBox) cluster.push(infoBox);
+    occupied.push(...cluster);
+    for (const piece of cluster.slice(1)) occupied.push(corridor(placed.avatar, piece));
+    if (infoBox && placed.boxes.length) {
+      const lowest = placed.boxes.reduce((a, b) => (a.bottom > b.bottom ? a : b));
+      occupied.push(corridor(infoBox, lowest));
+    }
   }
 }
 
@@ -392,6 +685,17 @@ function renderPhase() {
   phaseLineEl.textContent = `Phase ${player.phase}: ${phaseDef(player.phase).label}`;
 }
 
+function renderBots() {
+  const seated = Boolean(state.you && !state.you.spectator);
+  botsEl.hidden = !seated;
+  if (!seated) return;
+  const count = state.botCount ?? 0;
+  botsCountEl.textContent = String(count);
+  const allowed = canSetBots();
+  botsLessEl.disabled = !allowed || count <= 0;
+  botsMoreEl.disabled = !allowed || count >= (state.botLimit ?? 0);
+}
+
 function renderResult() {
   resultEl.replaceChildren();
   const result = state.roundResult;
@@ -431,9 +735,11 @@ function statusLine() {
   if (state.you.spectator) return "You're watching. A seat opens when someone leaves.";
   if (state.you.waiting) return "You're in. Cards come your way next round.";
   if (state.status === "lobby") {
-    return state.dealerId === state.you.id
-      ? "You're dealing. Start when two players are here."
-      : "Waiting for the dealer to start.";
+    if (state.dealerId !== state.you.id) return "Waiting for the dealer to start.";
+    const seated = state.players.filter((entry) => !entry.left).length;
+    return seated >= 2
+      ? "You're dealing. Deal when you're ready."
+      : "You're dealing. Add an AI player or wait for another person.";
   }
   if (state.status === "roundEnd") return `${state.roundResult?.wentOutName ?? "Someone"} went out.`;
   if (state.status === "gameOver") return `${state.roundResult?.winnerName ?? "Someone"} finishes phase 10.`;
@@ -625,6 +931,20 @@ function connect() {
     if (sessionStorage.getItem("playerId")) setTimeout(connect, 800);
   });
 }
+
+window.addEventListener("resize", () => {
+  if (state) placeSeats();
+});
+
+botsLessEl.addEventListener("click", () => {
+  if (!canSetBots()) return;
+  send({ type: "setBots", count: (state.botCount ?? 0) - 1 });
+});
+
+botsMoreEl.addEventListener("click", () => {
+  if (!canSetBots()) return;
+  send({ type: "setBots", count: (state.botCount ?? 0) + 1 });
+});
 
 chatForm.addEventListener("submit", (event) => {
   event.preventDefault();

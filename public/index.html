@@ -30,6 +30,12 @@
           <div id="hand" class="hand hand--play" aria-label="Your hand"></div>
         </div>
         <p id="phase-line" class="phase-line"></p>
+        <div id="bots" class="bot-stepper" hidden>
+          <span class="label">AI players</span>
+          <button class="btn btn-secondary" id="bots-less" type="button" aria-label="Fewer AI players" disabled>−</button>
+          <span id="bots-count" class="bot-count">0</span>
+          <button class="btn btn-secondary" id="bots-more" type="button" aria-label="More AI players" disabled>+</button>
+        </div>
         <div class="action-row" id="actions"></div>
         <div id="round-result" class="round-result"></div>
         <section class="panel chat-panel">

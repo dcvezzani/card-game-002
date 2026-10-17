@@ -5,7 +5,8 @@ import { fileURLToPath } from "node:url";
 import express from "express";
 import { WebSocketServer } from "ws";
 import { handOfThirteen } from "./lib/fanEngine.js";
-import { mulberry32 } from "./lib/phase10.js";
+import { chooseAction } from "./lib/ai.js";
+import { cardScore, mulberry32 } from "./lib/phase10.js";
 import {
   chat,
   createRoom,
@@ -20,6 +21,7 @@ import {
   reorder,
   replaceWild,
   reveal,
+  setBotCount,
   startRound,
   viewFor,
 } from "./lib/room.js";
@@ -47,6 +49,8 @@ app.use(express.static(path.join(__dirname, "public")));
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 const sockets = new Map();
+const BOT_DELAY_MS = 700;
+let botTimer = null;
 
 function send(ws, message) {
   if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(message));
@@ -56,6 +60,45 @@ function broadcast() {
   for (const [playerId, ws] of sockets) {
     send(ws, { type: "state", state: viewFor(room, playerId) });
   }
+  scheduleBots();
+}
+
+function fallbackAction(playerId) {
+  const player = room.players.find((entry) => entry.id === playerId);
+  if (room.step === "draw") return { type: "draw", source: "draw" };
+  const card = player.hand.reduce((highest, entry) =>
+    cardScore(entry) > cardScore(highest) ? entry : highest,
+  );
+  return { type: "discard", cardId: card.id };
+}
+
+function scheduleBots() {
+  if (botTimer) return;
+  if (room.status !== "playing" || !room.turnId) return;
+  const player = room.players.find((entry) => entry.id === room.turnId);
+  if (!player?.bot || player.left || player.waiting) return;
+  botTimer = setTimeout(stepBot, BOT_DELAY_MS);
+}
+
+function stepBot() {
+  botTimer = null;
+  const playerId = room.turnId;
+  const player = room.players.find((entry) => entry.id === playerId);
+  if (room.status !== "playing" || !player?.bot || player.left || player.waiting) return;
+
+  let action = null;
+  try {
+    action = chooseAction(viewFor(room, playerId));
+  } catch (error) {
+    console.error(error);
+  }
+  let result = action ? perform(playerId, action) : { ok: false };
+  if (!result.ok) result = perform(playerId, fallbackAction(playerId));
+  if (!result.ok) {
+    console.error(result.error);
+    return;
+  }
+  broadcast();
 }
 
 function perform(playerId, msg) {
@@ -80,6 +123,8 @@ function perform(playerId, msg) {
       return replaceWild(room, playerId, msg);
     case "chat":
       return chat(room, playerId, msg.text);
+    case "setBots":
+      return setBotCount(room, playerId, msg.count);
     default:
       return { ok: false, error: "Unknown action" };
   }
