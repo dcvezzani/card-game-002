@@ -21,6 +21,8 @@ import {
   reorder,
   replaceWild,
   reveal,
+  endGame,
+  newGame,
   setBotCount,
   startRound,
   viewFor,
@@ -105,6 +107,14 @@ function perform(playerId, msg) {
   switch (msg.type) {
     case "start":
       return startRound(room, playerId);
+    case "endGame":
+      if (botTimer) clearTimeout(botTimer);
+      botTimer = null;
+      return endGame(room, playerId);
+    case "newGame":
+      if (botTimer) clearTimeout(botTimer);
+      botTimer = null;
+      return newGame(room, playerId);
     case "draw":
       return draw(room, playerId, msg.source);
     case "discard":

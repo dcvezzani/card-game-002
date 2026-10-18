@@ -203,6 +203,18 @@ a:hover {
   letter-spacing: 0.02em;
 }
 
+.table-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.table-controls .btn {
+  min-height: 36px;
+  padding: var(--space-1) var(--space-4);
+  font-size: var(--text-xs);
+}
+
 .page-body {
   flex: 1;
   display: grid;
@@ -842,6 +854,10 @@ code {
   gap: 2px;
   width: max-content;
   max-width: 190px;
+}
+
+.seat-info[hidden] {
+  display: none;
 }
 
 .seat.is-away {

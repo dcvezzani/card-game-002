@@ -20,6 +20,8 @@ import {
   createRoom,
   discard,
   draw,
+  endGame,
+  newGame,
   hide,
   hit,
   join,
@@ -285,6 +287,32 @@ test("phase 10 ends the game for the lowest score", () => {
   assert.equal(room.status, "gameOver");
   assert.equal(room.winnerId, bo.id);
   assert.equal(ada.phase, 10);
+});
+
+test("end game clears the match and new game deals a fresh one", () => {
+  const room = createRoom(() => 0.4);
+  sit(room, "player-aaa", "Ada");
+  sit(room, "player-bbb", "Bo");
+  startRound(room, "player-aaa");
+  const ada = room.players[0];
+  ada.phase = 4;
+  ada.score = 25;
+  assert.equal(endGame(room, "player-bbb").ok, true);
+  assert.equal(room.status, "lobby");
+  assert.equal(ada.phase, 1);
+  assert.equal(ada.score, 0);
+  assert.equal(ada.hand.length, 0);
+  assert.equal(room.turnId, null);
+  assert.equal(endGame(room, "player-aaa").ok, false);
+
+  ada.phase = 3;
+  ada.score = 12;
+  assert.equal(newGame(room, "player-bbb").ok, true);
+  assert.equal(room.status, "playing");
+  assert.equal(ada.phase, 1);
+  assert.equal(ada.score, 0);
+  assert.equal(ada.hand.length, 10);
+  assert.equal(newGame(room, "bot-0001").ok, false);
 });
 
 test("empty draw pile reshuffles the discard except its top card", () => {

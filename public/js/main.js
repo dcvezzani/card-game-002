@@ -17,6 +17,9 @@ const chatLogEl = document.querySelector("#chat-log");
 const chatForm = document.querySelector("#chat-form");
 const chatInput = document.querySelector("#chat-input");
 const statusEl = document.querySelector("#status");
+const tableControlsEl = document.querySelector("#table-controls");
+const endGameEl = document.querySelector("#end-game");
+const newGameEl = document.querySelector("#new-game");
 const youChip = document.querySelector("#you-chip");
 const handDialog = document.querySelector("#hand-modal");
 const handStage = document.querySelector("#hand-stage");
@@ -108,8 +111,13 @@ function canHit() {
 
 function canDeal() {
   const player = me();
-  if (!player || state.dealerId !== player.id || state.status === "playing") return false;
+  if (!player || state.dealerId !== player.id) return false;
+  if (state.status !== "lobby" && state.status !== "roundEnd") return false;
   return state.players.filter((entry) => !entry.left).length >= 2;
+}
+
+function seatedHere() {
+  return Boolean(state.you && !state.you.spectator);
 }
 
 function canSetBots() {
@@ -132,6 +140,7 @@ function render() {
   renderActions();
   renderPhase();
   renderBots();
+  renderTableControls();
   renderResult();
   renderChat();
   statusEl.textContent = statusLine();
@@ -183,8 +192,7 @@ function renderTable() {
   const discardBtn = document.createElement("button");
   discardBtn.type = "button";
   discardBtn.className = "pile";
-  const discardLabel = state.discardTop ? "Discard pile" : "Discard pile, empty";
-  discardBtn.setAttribute("aria-label", discardLabel);
+  discardBtn.setAttribute("aria-label", `Discard pile, ${state.discardCount} cards`);
   if (state.discardTop) discardBtn.append(miniCard(state.discardTop, 72, 128));
   else {
     const empty = document.createElement("span");
@@ -192,6 +200,10 @@ function renderTable() {
     empty.textContent = "Discard";
     discardBtn.append(empty);
   }
+  const discardCount = document.createElement("span");
+  discardCount.className = "pile-count";
+  discardCount.textContent = String(state.discardCount);
+  discardBtn.append(discardCount);
   discardBtn.addEventListener("click", () => {
     if (canDraw() && state.discardTop) send({ type: "draw", source: "discard" });
     else if (canDiscard()) send({ type: "discard", cardId: selectedInHand()[0].id });
@@ -417,7 +429,7 @@ export function placeSeats() {
       top: bottom + 4,
       bottom: bottom + 4 + height,
     };
-    const clear = onTable(box) && clearOf(box, blockers) && !boxesMeet(box, avatar) && boxes.every((meld) => !boxesMeet(box, meld));
+    const clear = onTable(box) && clearOf(box, blockers) && boxes.every((meld) => !boxesMeet(box, meld));
     return clear ? box : null;
   };
 
@@ -530,7 +542,10 @@ export function placeSeats() {
       if (candidate && !placed) placed = candidate;
       if (!meldEls.length) break;
     }
-    if (!placed) continue;
+    if (!placed) {
+      info.hidden = true;
+      continue;
+    }
 
     const infoBox = placed.infoBox;
     applyInfoSize(info, infoBox ? placed.infoSize.px : 0);
@@ -583,7 +598,7 @@ function renderActions() {
     },
     {
       id: "deal",
-      label: state.status === "gameOver" ? "New game" : "Deal",
+      label: "Deal",
       enabled: canDeal(),
       run: () => send({ type: "start" }),
     },
@@ -692,6 +707,15 @@ function renderBots() {
   const allowed = canSetBots();
   botsLessEl.disabled = !allowed || count <= 0;
   botsMoreEl.disabled = !allowed || count >= (state.botLimit ?? 0);
+}
+
+function renderTableControls() {
+  const seated = seatedHere();
+  tableControlsEl.hidden = !seated;
+  if (!seated) return;
+  const players = state.players.filter((entry) => !entry.left).length;
+  endGameEl.disabled = state.status === "lobby";
+  newGameEl.disabled = players < 2;
 }
 
 function renderResult() {
@@ -921,6 +945,7 @@ function connect() {
     } else if (message.type === "left") {
       state = null;
       youChip.replaceChildren();
+      tableControlsEl.hidden = true;
       statusEl.textContent = "You left the table";
       if (!joinDialog.open) joinDialog.showModal();
     }
@@ -942,6 +967,16 @@ botsLessEl.addEventListener("click", () => {
 botsMoreEl.addEventListener("click", () => {
   if (!canSetBots()) return;
   send({ type: "setBots", count: (state.botCount ?? 0) + 1 });
+});
+
+endGameEl.addEventListener("click", () => {
+  if (!seatedHere() || state.status === "lobby") return;
+  send({ type: "endGame" });
+});
+
+newGameEl.addEventListener("click", () => {
+  if (!seatedHere()) return;
+  send({ type: "newGame" });
 });
 
 chatForm.addEventListener("submit", (event) => {
