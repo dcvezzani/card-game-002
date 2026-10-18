@@ -785,6 +785,7 @@ code {
 
 .pile-count,
 .hidden-count,
+.seat-name,
 .seat-meta,
 .watchers {
   color: var(--color-chalk);

@@ -396,24 +396,16 @@ export function placeSeats() {
     return best;
   };
 
-  const besideAvatar = (avatar, width, height, blockers) => {
-    const ax = (avatar.left + avatar.right) / 2;
-    const ay = (avatar.top + avatar.bottom) / 2;
-    const slots = [
-      [ax, avatar.top - SEAT_GAP - height / 2],
-      [ax, avatar.bottom + SEAT_GAP + height / 2],
-      [avatar.left - SEAT_GAP - width / 2, ay],
-      [avatar.right + SEAT_GAP + width / 2, ay],
-    ];
-    const fits = slots
-      .map(([x, y]) => localBox(x, y, width, height))
-      .filter((box) => onTable(box) && clearOf(box, blockers) && !boxesMeet(box, avatar));
-    fits.sort((a, b) => {
-      const ar = Math.hypot((a.left + a.right) / 2, (a.top + a.bottom) / 2);
-      const br = Math.hypot((b.left + b.right) / 2, (b.top + b.bottom) / 2);
-      return ar - br;
-    });
-    return fits[0] ?? null;
+  const underAvatar = (avatar, width, height, blockers) => {
+    const centerX = (avatar.left + avatar.right) / 2;
+    const box = {
+      left: centerX - width / 2,
+      right: centerX + width / 2,
+      top: avatar.bottom + SEAT_GAP,
+      bottom: avatar.bottom + SEAT_GAP + height,
+    };
+    const clear = onTable(box) && clearOf(box, blockers) && !boxesMeet(box, avatar);
+    return clear ? box : null;
   };
 
   const underStack = (boxes, width, height, blockers, avatar) => {
@@ -469,13 +461,12 @@ export function placeSeats() {
     const avatarEl = seat.querySelector(".avatar-btn");
     const meldEls = [...seat.querySelector(".seat-melds").querySelectorAll(".meld")];
     info.hidden = false;
-    const labelSizes = [15, 13, 12, 11, 10].map((px) => {
+    const labelSizes = [0, 13, 12, 11, 10].map((px) => {
       applyInfoSize(info, px);
       const rect = info.getBoundingClientRect();
       return { px, width: rect.width, height: rect.height };
     });
     applyInfoSize(info, 0);
-    const infoSize = info.getBoundingClientRect();
 
     let placed = null;
     for (let show = meldEls.length ? MELD_SHOW : MELD_SHOW_MIN; show >= MELD_SHOW_MIN; show -= 2) {
@@ -488,6 +479,13 @@ export function placeSeats() {
         if (!boxes?.length) return null;
         for (const sized of labelSizes) {
           const under = underStack(boxes, sized.width, sized.height, occupied, avatar);
+          if (under) return { infoBox: under, infoSize: sized };
+        }
+        return null;
+      };
+      const labelUnderAvatar = (avatar) => {
+        for (const sized of labelSizes) {
+          const under = underAvatar(avatar, sized.width, sized.height, occupied);
           if (under) return { infoBox: under, infoSize: sized };
         }
         return null;
@@ -506,7 +504,7 @@ export function placeSeats() {
             let boxes = separated?.boxes ?? nested?.boxes ?? [];
             let stackScore = separated?.score ?? nested?.score ?? 0;
             if (sizes.length && !boxes.length) continue;
-            let label = sizes.length ? labelUnder(separated?.boxes, avatar) : null;
+            let label = sizes.length ? labelUnder(separated?.boxes, avatar) : labelUnderAvatar(avatar);
             if (sizes.length && !label && nested) {
               const nestedLabel = labelUnder(nested.boxes, avatar);
               if (nestedLabel || !separated) {
@@ -515,8 +513,8 @@ export function placeSeats() {
                 label = nestedLabel;
               }
             }
-            const infoBox = sizes.length ? label?.infoBox ?? null : besideAvatar(avatar, infoSize.width, infoSize.height, occupied);
-            const sized = label?.infoSize ?? infoSize;
+            const infoBox = label?.infoBox ?? null;
+            const sized = label?.infoSize ?? labelSizes[0];
             const score = stackScore + ta * 0.02 + (infoBox ? 0 : 400);
             if (!candidate || score < candidate.score) {
               candidate = { avatar, boxes, infoSize: sized, infoBox, score };
@@ -535,7 +533,7 @@ export function placeSeats() {
     if (!placed) continue;
 
     const infoBox = placed.infoBox;
-    applyInfoSize(info, infoBox && placed.boxes.length ? placed.infoSize.px : 0);
+    applyInfoSize(info, infoBox ? placed.infoSize.px : 0);
     info.hidden = !infoBox;
     if (infoBox) shift(info, infoBox, placed.infoSize.width, placed.infoSize.height);
     shift(avatarEl, placed.avatar, 52, 52);
