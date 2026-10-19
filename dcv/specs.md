@@ -43,13 +43,14 @@ Specs only. No implementation yet. The Rec Room styleguide stays the visual syst
 - Flip top lifts the top card off the deck and sets it beside the deck as a loose face-up card. That shortcut always sets the loose card face-up, including when the deck is face-down. The new top card of the deck is left as it was.
 - Closing a window removes entities that were shown only in that window. An entity that still has another view stays in that other view.
 - Draw one moves the top card of a deck into the hand of the player who used it. An empty deck does nothing.
-- Right-click on empty desktop opens that player's menu. On a touch screen, long-press on empty desktop does the same. The menu stays only on that player's screen and holds New window, New deck, and New dummy. The player list and the map do not hold these controls. Any seated player can use the menu. A new deck and a new dummy still ask the questions already decided. Shuffle, flip, deal, and the other entity actions stay on the entity. This decision does not say what right-click or long-press does on a card, an entity, or a window.
+- Right-click on empty desktop opens that player's menu. On a touch screen, long-press on empty desktop does the same. The menu stays only on that player's screen and holds New window, New deck, and New dummy. The player list and the map do not hold these controls. Any seated player can use the menu. A new deck and a new dummy still ask the questions already decided. Shuffle, flip, deal, and the other entity actions stay on the entity.
+- Right-click or long-press on a card, hand, deck, pile, or window opens a context menu for that object, only on that player's screen. The empty-desktop menu is unchanged and still only offers New window, New deck, and New dummy. The object menu lists only actions that player is already allowed to take on that object. It grants no new authority. If they can take no action, no menu appears. It shows Delete only when that player is allowed to delete that entity.
 - A new empty window starts private, owned by the player who created it. They can drag entities into it and later switch it to public.
 - Adding a deck asks which window receives it. A deck placed in a public window is visible to everyone. A deck placed in a private window is visible only to the people who can see that window.
 - A view can be drawn as a fan, a row, or a grid. A tight stack is not in the first spec. The drawing belongs to that view, so a public window shows one drawing to everyone, and another window can draw the same entity differently.
 - A new hand, deck, pile, or loose card starts as a row. Fan and grid are chosen afterward on that view.
 - Delete removes that entity from every window. Every view of it disappears, and its cards are gone.
-- Any seated player who can see an entity can delete it. That includes another player's hand.
+- Delete follows the same authority as moving cards. Only the holder can delete their own hand. Another player cannot. Any seated player can delete a dummy's hand. Any seated player who can see a deck, pile, loose card, or grouped entity can delete that whole entity. While a player is away, others still cannot delete that hand. Assuming ownership makes the taker the holder, and then they can delete it. A card still inside a hand, deck, or pile is not separately deletable by this decision. Confirmation and the ten-second undo stay as they are.
 - A player who leaves or disconnects keeps their hand and private windows. Rejoining with the same name shows those windows again. Other players still cannot see the private windows.
 - While that player is gone, a seated player can assume ownership of their hand and their private windows. Public decks they placed stay where they are. When they rejoin, anything not taken is still theirs, and the control goes away.
 - The original public table stays public. It cannot be closed, deleted, or converted into an entity. Players can still move it, resize it, and change what is inside it.
@@ -92,4 +93,7 @@ Specs only. No implementation yet. The Rec Room styleguide stays the visual syst
 
 ## Still open
 
-The desktop menu gesture and dragging from a face-down deck or pile onto empty canvas are decided. Further decisions are still being collected.
+- Whether the object context menu can close a private window.
+- Whether that menu can delete one card inside a deck, pile, or hand.
+
+Further decisions are still being collected.
