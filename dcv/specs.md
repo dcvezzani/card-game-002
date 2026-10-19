@@ -24,7 +24,7 @@ Specs only. No implementation yet. The Rec Room styleguide stays the visual syst
 - The same entity can be referenced from more than one window. A control on the entity, Open in a new window, keeps the original in place and opens a private window on those same cards. Dragging an entity onto a window asks whether to move that view or also show it there. Moving a view takes it out of the source window. Also showing it leaves the source in place. A move inside a public window is seen by everyone. Each view can use its own drawing (fan, row, or grid). Copy is separate and makes a new deck.
 - Any seated player can edit a public window.
 - The player who switches a window to private is the one who controls that view. Everyone else who had it open sees it cleared, with that player's name. The owner can invite players when hiding it, or later with an invite link.
-- A window can become an entity, and an entity can become a window. Converting a window groups everything inside it into one new entity. You choose which window receives that group. Everyone sees the original window close and the grouped entity land there. Whether a hand can be packed into that group is not decided here.
+- A window can become an entity, and an entity can become a window. Converting a window groups everything inside it into one new entity. You choose which window receives that group. Everyone sees the original window close and the grouped entity land there. A hand inside some other window is packed into the group when that window is converted, along with everything else there. The protected hand window still cannot be converted. Deal and Draw one still reach that hand while it is packed. Opening the group is how you reach the hand. Existing views of the hand update.
 - An invited player can move, resize, and drag inside a private window the same as the owner.
 - A card leaves a hand only when the player who holds that hand moves it. Any seated player can move cards in a deck or pile on the public table.
 - Joining an empty table shows one public table window, a shared chat on that table, and a private window for each player with their own hand. Hands start empty.
@@ -70,7 +70,7 @@ Specs only. No implementation yet. The Rec Room styleguide stays the visual syst
 - A selection is visible to everyone who can see that window. The same cards are highlighted for all of them. A selection highlight on a player's own face-down hand is shared. Everyone who can see that window sees the same highlight. Faces stay hidden. Decks, piles, face-up hands, and dummy hands are unchanged.
 - Dragging a card to a new spot in the same hand, deck, or pile changes that entity's order. Every view shows the new order.
 
-- Public windows also share which one is in front. Bringing a public window forward brings it forward for everyone. Whether a private window that overlaps a public window on your screen shares that front-to-back order with everyone who can see the private window is not decided here.
+- Public windows also share which one is in front. Bringing a public window forward brings it forward for everyone, and that does not change which private window is in front on your screen. On your own screen, you choose which window is in front when a private window overlaps a public one, or overlaps another private window. That choice is only yours. It does not change the order anyone else sees.
 - The table is saved. Leaving and a server restart both keep the windows, cards, chat, and each player's scroll in each window. A player who rejoins with the same name returns to the scroll they last left. A new arrival, or a window that player has not scrolled, opens at the default spot.
 - A player is recognized by the name they type. If that name belongs to someone who is gone, the arrival gets that player's remaining private windows and hand.
 - If someone has already assumed ownership of that hand and those private windows, the name is free. The arrival gets a new empty hand and a new private window. The player who took ownership keeps what they took.
@@ -102,7 +102,7 @@ Specs only. No implementation yet. The Rec Room styleguide stays the visual syst
 
 ## Still open
 
-- When a private window overlaps a public window on your screen, is the front-to-back order only yours, or shared with everyone who can see that private window? Still being asked.
-- Can a hand be packed into a group when a window that contains it is converted? Still being asked.
+- Deleting a group that contains a hand: does the hand stay, with its cards, in the window where the group was, or is delete refused while a hand is inside? Still being asked.
+- Does converting a window ask for confirmation first? Still being asked.
 
 Further decisions are still being collected.
