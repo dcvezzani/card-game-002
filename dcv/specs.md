@@ -66,7 +66,7 @@ Specs only. No implementation yet. The Rec Room styleguide stays the visual syst
 - A player can select several cards in the same hand, deck, or pile and drag them together. They land in that same order. The drag locks every selected card. If one of them is already locked by another player, the drag does not start.
 - A chat log, a grid, or another entity can scroll inside itself. That inner scroll is local to each player. It does not move the window or anyone else's place in that log or grid.
 - Each player can turn on a pointer from a toggle on that window. It stays on until they turn it off. While it is on, the window shows their name and a distinct color wherever they point. Several pointers can show at once. The pointer does not move cards or windows.
-- A selection is visible to everyone who can see that window. The same cards are highlighted for all of them. Whether a selection highlight on a player's own face-down hand is shared, or shown only to the holder, is not decided here.
+- A selection is visible to everyone who can see that window. The same cards are highlighted for all of them. A selection highlight on a player's own face-down hand is shared. Everyone who can see that window sees the same highlight. Faces stay hidden. Decks, piles, face-up hands, and dummy hands are unchanged.
 - Dragging a card to a new spot in the same hand, deck, or pile changes that entity's order. Every view shows the new order.
 
 - Public windows also share which one is in front. Bringing a public window forward brings it forward for everyone.
@@ -102,6 +102,5 @@ Specs only. No implementation yet. The Rec Room styleguide stays the visual syst
 ## Still open
 
 - When the holder switches the hand window between private and public, whose frame becomes the shared frame, and what is restored on the way back? Still being asked.
-- Is a selection highlight on a player's own face-down hand shared with everyone who can see the window, or only shown to the holder? Still being asked.
 
 Further decisions are still being collected.
