@@ -125,7 +125,7 @@ Page anatomy, top to bottom:
 
 Spacing scale: 4 / 8 / 12 / 16 / 24 / 32 / 48 (`--space-1` … `--space-7`).
 
-**Arena circle** (`.arena`) is for a single focal table (card fan, winner badge). Use `.arena--rect` for lists, forms, and galleries.
+**Arena circle** (`.arena`) is for a single focal well (home hero, winner badge). Use `.arena--rect` for lists, forms, and galleries.
 
 Sticker stroke on panels: white ring, then ink ring, then a soft lift shadow.
 
@@ -227,12 +227,6 @@ Use `.select` and `.textarea` the same way. Labels stay visible; don’t rely on
 <span class="badge badge-info">Info</span>
 ```
 
-### Card fan (in-game)
-
-Keep existing classes `.hand`, `.card`, `.card-face`. Geometry still comes from CSS variables set in JS. Selection uses the sticker ring (chalk + court), not a blue outline.
-
----
-
 ## 6. Iconography and imagery
 
 - Favicons, empty states, and the marketing hero may use the sports collage.
@@ -246,7 +240,7 @@ Keep existing classes `.hand`, `.card`, `.card-face`. Geometry still comes from 
 
 - Duration: `--duration` (180ms). Easing: `--ease-bounce`.
 - Honor `prefers-reduced-motion: reduce` (transitions/animations off in CSS).
-- Focus rings are required; never `outline: none` without a replacement. Cards apply the ring on `.card-face`.
+- Focus rings are required; never `outline: none` without a replacement. Use `--focus-ring` (chalk + court).
 - Include a skip link to `#main` on multi-section pages.
 - Color is not the only state signal: “your turn” uses the ring **and** copy (“Alex to play”).
 - Minimum contrast as in [Color](#2-color). Hit targets ≥ 44px.
@@ -261,7 +255,7 @@ Header band with brand + “Host a table”. Body: `.arena--rect` containing a `
 
 ### In-game table
 
-Header: brand + opponent chips (active chip gets `.is-turn`). Body: circular `.arena` wrapping `#hand`. Footer: “Your turn” or a primary **Play** button.
+Header: brand + opponent chips (active chip gets `.is-turn`). Body: circular `.arena` for the play surface. Footer: “Your turn” or a primary **Play** button.
 
 ### Results
 
